@@ -1,32 +1,139 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Entrevistador Inteligente</title>
+    <meta charset="UTF-8">
+    <title>Entrevistador IA - Chat</title>
     <style>
-        #chat { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
-        .message { margin: 10px 0; }
-        .bot { color: blue; }
-        .user { color: green; }
+        body {
+            background: #111;
+            color: #e0e0e0;
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+        .chat-container {
+            max-width: 500px;
+            margin: 40px auto;
+            background: #181818;
+            border-radius: 18px;
+            box-shadow: 0 6px 32px 0 #00ffae44;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            border: 2px solid #39ff14;
+        }
+        .chat-header {
+            background: #111;
+            color: #39ff14;
+            text-align: center;
+            padding: 18px;
+            font-size: 1.35em;
+            letter-spacing: 2.5px;
+            font-weight: bold;
+            border-bottom: 1px solid #39ff14;
+        }
+        #chat {
+            flex: 1;
+            padding: 24px 18px;
+            overflow-y: auto;
+            background: #1a1a1a;
+            scroll-behavior: smooth;
+        }
+        .message {
+            margin: 14px 0;
+            padding: 12px 18px;
+            border-radius: 12px;
+            max-width: 85%;
+            word-break: break-word;
+            font-size: 1.05em;
+            line-height: 1.6;
+            box-shadow: 0 2px 6px #1118;
+        }
+        .bot {
+            background: linear-gradient(90deg, #161616 70%, #39ff1466 100%);
+            color: #39ff14;
+            align-self: flex-start;
+            border: 1px solid #39ff14bb;
+        }
+        .user {
+            background: #232323;
+            color: #fff;
+            align-self: flex-end;
+            border: 1px solid #39ff1411;
+        }
+        .input-area {
+            display: flex;
+            border-top: 1px solid #39ff14;
+            background: #181818;
+            padding: 16px;
+        }
+        #userInput {
+            flex: 1;
+            padding: 12px 14px;
+            border: none;
+            border-radius: 8px;
+            background: #141414;
+            color: #39ff14;
+            font-size: 1em;
+            outline: none;
+            margin-right: 12px;
+        }
+        #userInput::placeholder {
+            color: #39ff1477;
+        }
+        .send-btn {
+            background: #39ff14;
+            color: #181818;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 0 26px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 2px 8px #39ff1466;
+        }
+        .send-btn:hover {
+            background: #48ff5b;
+            color: #0d0d0d;
+        }
+        /* Scrollbar Custom */
+        #chat::-webkit-scrollbar {
+            width: 8px;
+            background: #111;
+        }
+        #chat::-webkit-scrollbar-thumb {
+            background: #39ff1422;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
-    <h1>Evaluación de Capacitación</h1>
-    <div id="chat"></div>
-    <input type="text" id="userInput" placeholder="Escribe tu respuesta..." style="width: 70%">
-    <button onclick="sendMessage()">Enviar</button>
-    
+    <div class="chat-container">
+        <div class="chat-header">
+            <span>Entrevistador IA <span style="font-size:0.8em;opacity:0.7;">by Carlos</span></span>
+        </div>
+        <div id="chat"></div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Escribe tu respuesta..." autocomplete="off" />
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">Enviar</button>
+        </div>
+    </div>
     <script>
         const sessionId = 'session_' + Date.now();
-        const webhookUrl = 'TU_WEBHOOK_URL_AQUI';
-        
+        const webhookUrl = 'TU_WEBHOOK_URL_AQUI'; // Cambia esto por tu webhook real
+
         function sendMessage() {
             const input = document.getElementById('userInput');
-            const message = input.value;
+            const message = input.value.trim();
             if (!message) return;
-            
             addMessage('user', message);
             input.value = '';
-            
+            input.disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+
             fetch(webhookUrl, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -38,17 +145,36 @@
             .then(response => response.json())
             .then(data => {
                 addMessage('bot', data.response);
+            })
+            .catch(() => {
+                addMessage('bot', 'Ocurrió un error. Intenta nuevamente.');
+            })
+            .finally(() => {
+                input.disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                input.focus();
             });
         }
-        
+
         function addMessage(type, text) {
             const chat = document.getElementById('chat');
-            chat.innerHTML += `<div class="message ${type}">${type === 'bot' ? 'Entrevistador: ' : 'Tú: '}${text}</div>`;
+            const msg = document.createElement('div');
+            msg.className = 'message ' + type;
+            msg.innerHTML = (type === 'bot' ? '🤖 ' : '🧑 ') + text;
+            chat.appendChild(msg);
             chat.scrollTop = chat.scrollHeight;
         }
-        
-        // Mensaje inicial
-        addMessage('bot', '¡Hola! Soy tu entrevistador virtual. Me gustaría conocer tu experiencia con la capacitación. ¿Cómo describirías tu experiencia general?');
+
+        // Enviar con Enter
+        document.getElementById('userInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Primer mensaje del bot
+        window.onload = () => {
+            addMessage('bot', '¡Hola! Soy tu entrevistador virtual. Cuéntame, ¿cómo describirías tu experiencia general con la capacitación?');
+            document.getElementById('userInput').focus();
+        };
     </script>
 </body>
 </html>
